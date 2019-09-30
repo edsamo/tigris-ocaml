@@ -1,4 +1,4 @@
-{
+git {
   module L = Lexing
 
   type token = [%import: Parser.token] [@@deriving show]
@@ -40,15 +40,53 @@ rule token = parse
   (* add the remaining tokens *)
   | eof           { EOF }
   | _             { illegal_character (Location.curr_loc lexbuf) (L.lexeme_char lexbuf 0) }
+  | "if"          { IF }
+  | "then"        { THEN }
+  | "else"        { ELSE }
+  | "while"       { WHILE }
+  | "do"          { DO }
+  | "break"       { BREAK }
+  | "let"         { LET }
+  | "in"          { IN }
+  | "end"         { END }
+  | "var"         { VAR }
+  | "("           { LPAREN }
+  | ")"           { RPAREN }
+  | ":"           { COLON }
+  | ","           { COMMA }
+  | ";"           { SEMI }
+  | "+"           { PLUS }
+  | "-"           { MINUS }
+  | "*"           { TIMES }
+  | "/"           { DIV }
+  | "%"           { MOD }
+  | "^"           { POW }
+  | "="           { EQ }
+  | "<>"          { NE }
+  | "<"           { LT }
+  | "<="          { LE }
+  | ">"           { GT }
+  | ">="          { GE }
+  | "&"           { AND }
+  | "|"           { OR }
+  | ":="          { ASSIGN }
 
 and string pos = parse
 | '"'                  { lexbuf.L.lex_start_p <- pos;
                          let text = Buffer.contents string_buffer in
                          Buffer.clear string_buffer;
                          STRING text }
+(* add the other escape sequences *)
 | "\\t"                { Buffer.add_char string_buffer '\t';
                          string pos lexbuf }
-(* add the other escape sequences *)
+| "\\n"                { Buffer.add_char string_buffer '\n';
+                         string pos lexbuf }               
+| "\\r"                { Buffer.add_char string_buffer '\r';
+                         string pos lexbuf }
+| "\\b"                { Buffer.add_char string_buffer '\b';
+                         string pos lexbuf }
+| "\\^" (['A'-'Z' '@' '[' '\\' ']' '^' '_' '?'] as i)  { Buffer.add_char string_buffer i;
+                         string pos lexbuf }                 
 (* report error on invalid escape sequence *)
 | [^ '\\' '"']+ as lxm { str_incr_linenum lxm lexbuf;
                          Buffer.add_string string_buffer lxm;
